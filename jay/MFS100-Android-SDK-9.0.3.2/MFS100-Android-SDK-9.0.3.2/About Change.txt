@@ -1,0 +1,11 @@
+verson 9.0.3.2
+library changed from libMFS100V9028.so to libMFS100V9032.so
+mantra.mfs100.jar file revised as per .so changed
+
+Updates:
+
+Previously it was required that if application "a" as initialized scanner then application "b" should not capture finger due to crash. This issue has been resolved with this update.
+
+Some other minor bugs has been fixed.
+
+
