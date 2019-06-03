@@ -66,7 +66,12 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
     public void OnDeviceAttached(int i, int i1, boolean b) {
 
     }
-
+    public void onClick()
+    {
+        if (!isCaptureRunning) {
+            StartSyncCapture();
+        }
+    }
     @Override
     public void OnDeviceDetached() {
 
