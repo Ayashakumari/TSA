@@ -24,6 +24,32 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
     MFS100 mfs100 = null;
     private boolean isCaptureRunning = false;
 
+    public void SetData2(FingerData fingerData) {
+        if (scannerAction.equals(ScannerAction.Capture)) {
+            Enroll_Template = new byte[fingerData.ISOTemplate().length];
+            System.arraycopy(fingerData.ISOTemplate(), 0, Enroll_Template, 0,
+                    fingerData.ISOTemplate().length);
+        } else if (scannerAction.equals(ScannerAction.Verify)) {
+            Verify_Template = new byte[fingerData.ISOTemplate().length];
+            System.arraycopy(fingerData.ISOTemplate(), 0, Verify_Template, 0,
+                    fingerData.ISOTemplate().length);
+            int ret = mfs100.MatchISO(Enroll_Template, Verify_Template);
+            if (ret < 0) {
+                SetTextOnUIThread("Error: " + ret + "(" + mfs100.GetErrorMsg(ret) + ")");
+            } else {
+                if (ret >= 1400) {
+                    SetTextOnUIThread("Finger matched with score: " + ret);
+                } else {
+                    SetTextOnUIThread("Finger not matched, score: " + ret);
+                }
+            }
+        }
+
+        WriteFile("Raw.raw", fingerData.RawData());
+        WriteFile("Bitmap.bmp", fingerData.FingerImage());
+        WriteFile("ISOTemplate.iso", fingerData.ISOTemplate());
+    }
+
     private void StartSyncCapture() {
         new Thread(new Runnable() {
 
@@ -63,7 +89,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                                 + fingerData.Bpp() + "\nWSQ Info: "
                                 + fingerData.WSQInfo();
                         // SetLogOnUIThread(log);
-                        // SetData2(fingerData);
+                        SetData2(fingerData);
                     }
                 } catch (Exception ex) {
                     SetTextOnUIThread("Error");
@@ -132,9 +158,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
 
     }
 
-    private enum ScannerAction {
-        Capture, Verify
-    }
+
     @Override
     public void OnDeviceDetached() {
 
