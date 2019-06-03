@@ -2,7 +2,6 @@ package com.xtremus.fintest;
 
 import android.os.Bundle;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -30,26 +29,6 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
             mfs100.SetApplicationContext(MainActivity.this);
         } else {
             InitScanner();
-        }
-    }
-
-    private void InitScanner() {
-        try {
-            int ret = mfs100.Init();
-            if (ret != 0) {
-                SetTextOnUIThread(mfs100.GetErrorMsg(ret));
-            } else {
-                SetTextOnUIThread("Init success");
-                /*String info = "Serial: " + mfs100.GetDeviceInfo().SerialNo()
-                        + " Make: " + mfs100.GetDeviceInfo().Make()
-                        + " Model: " + mfs100.GetDeviceInfo().Model()
-                        + "\nCertificate: " + mfs100.GetCertification();
-                SetLogOnUIThread(info); */
-            }
-        } catch (Exception ex) {
-            Toast.makeText(this, "Init failed, unhandled exception",
-                    Toast.LENGTH_LONG).show();
-            SetTextOnUIThread("Init failed, unhandled exception");
         }
     }
 
