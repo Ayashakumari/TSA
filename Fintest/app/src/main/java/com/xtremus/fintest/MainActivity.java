@@ -23,6 +23,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        
 
 
         if (mfs100 == null) {
