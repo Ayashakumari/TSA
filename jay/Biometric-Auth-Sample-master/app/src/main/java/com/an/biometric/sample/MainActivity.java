@@ -15,6 +15,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.TextView.BufferType;
 import android.widget.Toast;
+import com.mantra.*;
 import com.mantra.mfs100.FingerData;
 import com.mantra.mfs100.MFS100;
 import com.mantra.mfs100.MFS100Event;
@@ -59,7 +60,52 @@ public class MainActivity extends AppCompatActivity implements BiometricCallback
 
                 *
                  * */
+                new Thread(new Runnable() {
 
+                    @Override
+                    public void run() {
+                        isCaptureRunning = true;
+                        try {
+                            FingerData fingerData = new FingerData();
+                            int ret = mfs100.AutoCapture(fingerData, timeout, cbFastDetection.isChecked());
+                            Log.e("StartSyncCapture.RET", ""+ret);
+                            if (ret != 0) {
+                                SetTextOnUIThread(mfs100.GetErrorMsg(ret));
+                            } else {
+                                lastCapFingerData = fingerData;
+                                final Bitmap bitmap = BitmapFactory.decodeByteArray(fingerData.FingerImage(), 0,
+                                        fingerData.FingerImage().length);
+                                com.mantra.MFS100Test.this.runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        imgFinger.setImageBitmap(bitmap);
+                                    }
+                                });
+
+                                SetTextOnUIThread("Capture Success");
+                                String log = "\nQuality: " + fingerData.Quality()
+                                        + "\nNFIQ: " + fingerData.Nfiq()
+                                        + "\nWSQ Compress Ratio: "
+                                        + fingerData.WSQCompressRatio()
+                                        + "\nImage Dimensions (inch): "
+                                        + fingerData.InWidth() + "\" X "
+                                        + fingerData.InHeight() + "\""
+                                        + "\nImage Area (inch): " + fingerData.InArea()
+                                        + "\"" + "\nResolution (dpi/ppi): "
+                                        + fingerData.Resolution() + "\nGray Scale: "
+                                        + fingerData.GrayScale() + "\nBits Per Pixal: "
+                                        + fingerData.Bpp() + "\nWSQ Info: "
+                                        + fingerData.WSQInfo();
+                                SetLogOnUIThread(log);
+                                SetData2(fingerData);
+                            }
+                        } catch (Exception ex) {
+                            SetTextOnUIThread("Error");
+                        } finally {
+                            isCaptureRunning = false;
+                        }
+                    }
+                }).start();
                     }
                 //start authentication
                 mBiometricManager.authenticate(MainActivity.this);
