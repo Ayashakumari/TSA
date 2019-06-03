@@ -39,11 +39,11 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                 SetTextOnUIThread(mfs100.GetErrorMsg(ret));
             } else {
                 SetTextOnUIThread("Init success");
-                String info = "Serial: " + mfs100.GetDeviceInfo().SerialNo()
+                /*String info = "Serial: " + mfs100.GetDeviceInfo().SerialNo()
                         + " Make: " + mfs100.GetDeviceInfo().Make()
                         + " Model: " + mfs100.GetDeviceInfo().Model()
                         + "\nCertificate: " + mfs100.GetCertification();
-                /*SetLogOnUIThread(info);*/
+                SetLogOnUIThread(info);*/
             }
         } catch (Exception ex) {
             Toast.makeText(this, "Init failed, unhandled exception",
@@ -62,27 +62,5 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
         });
     }
 
-<<<<<<< Updated upstream
 
-    @Override
-    public void OnDeviceAttached(int i, int i1, boolean b) {
-=======
-
-
-
-    @Override
-   public void OnDeviceAttached(int vid, int pid, boolean hasPermission) {
->>>>>>> Stashed changes
-
-    }
-
-    @Override
-    public void OnDeviceDetached() {
-
-    }
-
-    @Override
-    public void OnHostCheckFailed(String s) {
-
-    }
 }
