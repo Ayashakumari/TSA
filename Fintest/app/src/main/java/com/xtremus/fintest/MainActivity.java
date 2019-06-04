@@ -4,31 +4,35 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.mantra.mfs100.DeviceInfo;
 import com.mantra.mfs100.FingerData;
 import com.mantra.mfs100.MFS100;
 import com.mantra.mfs100.MFS100Event;
 
 public class MainActivity extends AppCompatActivity implements MFS100Event {
 
-
-    EditText lblMessage;
-
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+    TextView aView2;
+    private enum ScannerAction {
+        Capture, Verify
     }
+    private FingerData lastCapFingerData = null;
     ScannerAction scannerAction = ScannerAction.Capture;
 
 
     int timeout = 10000;
     MFS100 mfs100 = null;
     private boolean isCaptureRunning = false;
-
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+    }
     protected void onStart() {
         Toast.makeText(this, "Init Process started", Toast.LENGTH_LONG).show();
         if (mfs100 == null) {
@@ -42,31 +46,32 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
         super.onStart();
     }
 
+
     private void StartSyncCapture() {
         new Thread(new Runnable() {
 
             @Override
             public void run() {
-                SetTextOnUIThread("");
+                //SetTextOnUIThread("");
                 isCaptureRunning = true;
                 try {
                     FingerData fingerData = new FingerData();
                     int ret = mfs100.AutoCapture(fingerData, timeout, false);
                     Log.e("StartSyncCapture.RET", "" + ret);
                     if (ret != 0) {
-                        SetTextOnUIThread(mfs100.GetErrorMsg(ret));
+                        //SetTextOnUIThread(mfs100.GetErrorMsg(ret));
                     } else {
-                        //lastCapFingerData = fingerData;
+                        lastCapFingerData = fingerData;
                         final Bitmap bitmap = BitmapFactory.decodeByteArray(fingerData.FingerImage(), 0,
                                 fingerData.FingerImage().length);
                         MainActivity.this.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                //imgFinger.setImageBitmap(bitmap);
+                                //SetTextOnUIThread("good");
                             }
                         });
 
-                        SetTextOnUIThread("Capture Success");
+                        //SetTextOnUIThread("Capture Success");
                         String log = "\nQuality: " + fingerData.Quality()
                                 + "\nNFIQ: " + fingerData.Nfiq()
                                 + "\nWSQ Compress Ratio: "
@@ -80,11 +85,11 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                                 + fingerData.GrayScale() + "\nBits Per Pixal: "
                                 + fingerData.Bpp() + "\nWSQ Info: "
                                 + fingerData.WSQInfo();
-                        SetTextOnUIThread(log);
-                        // SetData2(fingerData);
+                       // SetTextOnUIThread(log);
+                       // SetData2(fingerData);
                     }
                 } catch (Exception ex) {
-                    SetTextOnUIThread("Error");
+                    //SetTextOnUIThread("Error");
                 } finally {
                     isCaptureRunning = false;
                 }
@@ -92,20 +97,13 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
         }).start();
     }
 
-    public void onLoginClick() {
-        InitScanner();
-        scannerAction = ScannerAction.Capture;
-        if (!isCaptureRunning) {
-            StartSyncCapture();
-        }
-    }
 
 
     private void SetTextOnUIThread(final String str) {
 
-        lblMessage.post(new Runnable() {
+        aView2.post(new Runnable() {
             public void run() {
-                lblMessage.setText(str);
+                aView2.setText(str);
             }
         });
     }
@@ -117,11 +115,11 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                 SetTextOnUIThread(mfs100.GetErrorMsg(ret));
             } else {
                 SetTextOnUIThread("Init success");
-                /*String info = "Serial: " + mfs100.GetDeviceInfo().SerialNo()
+                String info = "Serial: " + mfs100.GetDeviceInfo().SerialNo()
                         + " Make: " + mfs100.GetDeviceInfo().Make()
                         + " Model: " + mfs100.GetDeviceInfo().Model()
                         + "\nCertificate: " + mfs100.GetCertification();
-                SetLogOnUIThread(info);*/
+                SetTextOnUIThread(info);
             }
         } catch (Exception ex) {
             Toast.makeText(this, "Init failed, unhandled exception",
@@ -130,6 +128,18 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
         }
     }
 
+    public void onLoginClick(View v) {
+        int id = v.getId();
+        if (id == R.id.btnLog) {
+            Toast.makeText(this, "Init Process started in login", Toast.LENGTH_LONG).show();
+            InitScanner();
+
+            scannerAction = ScannerAction.Capture;
+            if (!isCaptureRunning) {
+                StartSyncCapture();
+            }
+        }
+    }
     private void showSuccessLog(String key) {
         SetTextOnUIThread("Init success");
         String info = "\nKey: " + key + "\nSerial: "
@@ -137,39 +147,26 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                 + mfs100.GetDeviceInfo().Make() + " Model: "
                 + mfs100.GetDeviceInfo().Model()
                 + "\nCertificate: " + mfs100.GetCertification();
-        SetTextOnUIThread(info);
+        aView2.setText(info);
     }
 
     @Override
     public void OnDeviceAttached(int vid, int pid, boolean hasPermission) {
-        int ret;
-        if (!hasPermission) {
-            SetTextOnUIThread("Permission denied");
-            return;
-        }
-        if (vid == 1204 || vid == 11279) {
-            if (pid == 34323) {
-                ret = mfs100.LoadFirmware();
-                if (ret != 0) {
-                    SetTextOnUIThread(mfs100.GetErrorMsg(ret));
-                } else {
-                    SetTextOnUIThread("Load firmware success");
-                }
-            } else if (pid == 4101) {
-                String key = "Without Key";
-                ret = mfs100.Init();
-                if (ret == 0) {
-                    showSuccessLog(key);
-                } else {
-                    SetTextOnUIThread(mfs100.GetErrorMsg(ret));
-                }
-
+        int ret = mfs100.Init();
+        String key = "Without Key";
+        if(ret==0)
+        {
+            DeviceInfo deviceInfo = null;
+            deviceInfo = mfs100.GetDeviceInfo();
+            if (deviceInfo != null)
+            {
+                String msg = mfs100.GetDeviceInfo().SerialNo();
+                //showSuccessLog(key);
+                Toast.makeText(this, msg,
+                        Toast.LENGTH_LONG).show();
+                //showSuccessLog(key);
             }
         }
-    }
-
-    private enum ScannerAction {
-        Capture, Verify
     }
 
 
