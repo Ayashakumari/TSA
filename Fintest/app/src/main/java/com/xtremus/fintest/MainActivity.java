@@ -92,18 +92,15 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
         }
     }
 
-    private void FindFormControls() {
-    }
 
     public void FindFormControls() {
 
-        btnMatchISOTemplate = (Button) findViewById(R.id.btnMatchISOTemplate);
+        btnMatchISOTemplate = (Button) findViewById(R.id.match);
 
         lblMessage = (TextView) findViewById(R.id.lblMessage);
         txtEventLog = (EditText) findViewById(R.id.txtEventLog);
-        imgFinger = (ImageView) findViewById(R.id.imgFinger);
-        btnSyncCapture = (Button) findViewById(R.id.btnSyncCapture);
-        btnStopCapture = (Button) findViewById(R.id.btnStopCapture);
+        btnSyncCapture = (Button) findViewById(R.id.enroll);
+
 
     }
 
