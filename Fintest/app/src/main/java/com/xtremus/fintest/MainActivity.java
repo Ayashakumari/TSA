@@ -1,15 +1,5 @@
 package com.xtremus.fintest;
 
-import android.os.Bundle;
-import android.widget.EditText;
-import android.widget.Toast;
-
-import androidx.appcompat.app.AppCompatActivity;
-
-import com.mantra.mfs100.MFS100;
-import com.mantra.mfs100.MFS100Event;
-
-import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -18,12 +8,11 @@ import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.TextView.BufferType;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.mantra.mfs100.FingerData;
 import com.mantra.mfs100.MFS100;
@@ -87,6 +76,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
         btnSyncCapture.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                InitScanner();
 
                 scannerAction = ScannerAction.Capture;
                 if (!isCaptureRunning) {
@@ -102,8 +92,8 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                 scannerAction = ScannerAction.Verify;
                 if (!isCaptureRunning) {
                     SetTextOnUIThread("Match will start.");
-                    //StartSyncCapture();
-                    //StartSyncCapture();
+                    Capture();
+
                 }
             }
         });
@@ -155,7 +145,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                                 + fingerData.Bpp() + "\nWSQ Info: "
                                 + fingerData.WSQInfo();
                         SetLogOnUIThread(log);
-                        //SetData2(fingerData);
+                        SetData2(fingerData);
                     }
                 } catch (Exception ex) {
                     SetTextOnUIThread("Error");
@@ -232,7 +222,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
     }
 
 
-/*
+
 
 
 
@@ -241,6 +231,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
         try {
             String path = Environment.getExternalStorageDirectory()
                     + "//FingerData";
+
             File file = new File(path);
             if (!file.exists()) {
                 file.mkdirs();
@@ -284,8 +275,8 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
         WriteFile("ISOTemplate.iso", fingerData.ISOTemplate());
     }
 
-    @Override
-    public void OnDeviceAttached(int vid, int pid, boolean hasPermission) {
+  //  @Override
+   /* public void OnDeviceAttached(int vid, int pid, boolean hasPermission) {
         int ret;
         if (!hasPermission) {
             SetTextOnUIThread("Permission denied");
@@ -312,7 +303,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
         }
     }
 
-    @Override
+   /* @Override
     public void OnDeviceDetached() {
         UnInitScanner();
         SetTextOnUIThread("Device removed");
