@@ -36,22 +36,127 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
 
 
     Button btnSyncCapture;
-    Button btnStopCapture;
+
     Button btnMatchISOTemplate;
 
 
     TextView lblMessage;
     EditText txtEventLog;
-    ImageView imgFinger;
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+
+        FindFormControls();
+        try {
+            this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+        } catch (Exception e) {
+            Log.e("Error", e.toString());
+        }
+
+    }
+
     byte[] Enroll_Template;
     byte[] Verify_Template;
     ScannerAction scannerAction = ScannerAction.Capture;
     private FingerData lastCapFingerData = null;
     private boolean isCaptureRunning = false;
 
+    int timeout = 10000;
+    MFS100 mfs100 = null;
+
+    public void FindFormControls() {
+
+        btnMatchISOTemplate = (Button) findViewById(R.id.match);
+
+        lblMessage = (TextView) findViewById(R.id.lblMessage);
+        txtEventLog = (EditText) findViewById(R.id.txtEventLog);
+        btnSyncCapture = (Button) findViewById(R.id.enroll);
+
+
+        if (mfs100 == null) {
+            mfs100 = new MFS100(this);
+            mfs100.SetApplicationContext(MainActivity.this);
+            Toast.makeText(this, "Init Success",
+                    Toast.LENGTH_LONG).show();
+            SetTextOnUIThread("Init Successful.");
+        } else {
+            InitScanner();
+        }
+
+    }
+
+    public void onControlClicked(View v) {
+
+        switch (v.getId()) {
+
+            case R.id.enroll:
+                scannerAction = ScannerAction.Capture;
+                if (!isCaptureRunning) {
+                    SetTextOnUIThread("Capure will start.");
+                    //StartSyncCapture();
+                }
+                break;
+
+            case R.id.match:
+                scannerAction = ScannerAction.Verify;
+                if (!isCaptureRunning) {
+                    SetTextOnUIThread("Match will start.");
+                    //StartSyncCapture();
+                    //StartSyncCapture();
+                }
+                break;
+
+
+            default:
+
+                break;
+        }
+    }
+
+    private void InitScanner() {
+        try {
+            int ret = mfs100.Init();
+            if (ret != 0) {
+                SetTextOnUIThread(mfs100.GetErrorMsg(ret));
+            } else {
+                SetTextOnUIThread("Init success");
+                String info = "Serial: " + mfs100.GetDeviceInfo().SerialNo()
+                        + " Make: " + mfs100.GetDeviceInfo().Make()
+                        + " Model: " + mfs100.GetDeviceInfo().Model()
+                        + "\nCertificate: " + mfs100.GetCertification();
+                SetLogOnUIThread(info);
+            }
+        } catch (Exception ex) {
+            Toast.makeText(this, "Init failed, unhandled exception",
+                    Toast.LENGTH_LONG).show();
+            SetTextOnUIThread("Init failed, unhandled exception");
+        }
+    }
+
+    private void SetLogOnUIThread(final String str) {
+
+        txtEventLog.post(new Runnable() {
+            public void run() {
+                txtEventLog.append("\n" + str);
+            }
+        });
+    }
+
     @Override
     public void OnDeviceAttached(int i, int i1, boolean b) {
 
+    }
+
+
+    private void SetTextOnUIThread(final String str) {
+
+        lblMessage.post(new Runnable() {
+            public void run() {
+                lblMessage.setText(str);
+            }
+        });
     }
 
     @Override
@@ -69,86 +174,9 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
 
     }
 
-    int timeout = 10000;
-    MFS100 mfs100 = null;
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-
-        FindFormControls();
-        try {
-            this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
-        } catch (Exception e) {
-            Log.e("Error", e.toString());
-        }
-        if (mfs100 == null) {
-            mfs100 = new MFS100(this);
-            mfs100.SetApplicationContext(MainActivity.this);
-        } else {
-            InitScanner();
-        }
-    }
-
-
-    public void FindFormControls() {
-
-        btnMatchISOTemplate = (Button) findViewById(R.id.match);
-
-        lblMessage = (TextView) findViewById(R.id.lblMessage);
-        txtEventLog = (EditText) findViewById(R.id.txtEventLog);
-        btnSyncCapture = (Button) findViewById(R.id.enroll);
-
-
-    }
-
-    private void SetLogOnUIThread(final String str) {
-
-        txtEventLog.post(new Runnable() {
-            public void run() {
-                txtEventLog.append("\n" + str);
-            }
-        });
-    }
-
-
-    private void InitScanner() {
-        try {
-            int ret = mfs100.Init();
-            if (ret != 0) {
-                SetTextOnUIThread(mfs100.GetErrorMsg(ret));
-            } else {
-                SetTextOnUIThread("Init success");
-                /*String info = "Serial: " + mfs100.GetDeviceInfo().SerialNo()
-                        + " Make: " + mfs100.GetDeviceInfo().Make()
-                        + " Model: " + mfs100.GetDeviceInfo().Model()
-                        + "\nCertificate: " + mfs100.GetCertification();
-                SetLogOnUIThread(info); */
-            }
-        } catch (Exception ex) {
-            Toast.makeText(this, "Init failed, unhandled exception",
-                    Toast.LENGTH_LONG).show();
-            SetTextOnUIThread("Init failed, unhandled exception");
-        }
-    }
-
-
-    private void SetTextOnUIThread(final String str) {
-
-        lblMessage.post(new Runnable() {
-            public void run() {
-                lblMessage.setText(str);
-            }
-        });
-    }
-
     private enum ScannerAction {
         Capture, Verify
     }
-
-
 
 /*
 
@@ -182,66 +210,8 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
 
 
 
-    public void onControlClicked(View v) {
 
-        switch (v.getId()) {
-            case R.id.btnInit:
-                InitScanner();
-                break;
-            case R.id.btnUninit:
-                UnInitScanner();
-                break;
-            case R.id.btnSyncCapture:
-                scannerAction = ScannerAction.Capture;
-                if (!isCaptureRunning) {
-                    StartSyncCapture();
-                }
-                break;
-            case R.id.btnStopCapture:
-                StopCapture();
-                break;
-            case R.id.btnMatchISOTemplate:
-                scannerAction = ScannerAction.Verify;
-                if (!isCaptureRunning) {
-                    StartSyncCapture();
-                }
-                break;
-            case R.id.btnExtractISOImage:
-                ExtractISOImage();
-                break;
-            case R.id.btnExtractAnsi:
-                ExtractANSITemplate();
-                break;
-            case R.id.btnExtractWSQImage:
-                ExtractWSQImage();
-                break;
-            case R.id.btnClearLog:
-                ClearLog();
-                break;
-            default:
-                break;
-        }
-    }
 
-    private void InitScanner() {
-        try {
-            int ret = mfs100.Init();
-            if (ret != 0) {
-                SetTextOnUIThread(mfs100.GetErrorMsg(ret));
-            } else {
-                SetTextOnUIThread("Init success");
-                String info = "Serial: " + mfs100.GetDeviceInfo().SerialNo()
-                        + " Make: " + mfs100.GetDeviceInfo().Make()
-                        + " Model: " + mfs100.GetDeviceInfo().Model()
-                        + "\nCertificate: " + mfs100.GetCertification();
-                SetLogOnUIThread(info);
-            }
-        } catch (Exception ex) {
-            Toast.makeText(this, "Init failed, unhandled exception",
-                    Toast.LENGTH_LONG).show();
-            SetTextOnUIThread("Init failed, unhandled exception");
-        }
-    }
 
     private void StartSyncCapture() {
         new Thread(new Runnable() {
