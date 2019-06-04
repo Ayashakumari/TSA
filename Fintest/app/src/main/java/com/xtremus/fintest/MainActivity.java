@@ -35,12 +35,42 @@ import java.io.FileOutputStream;
 public class MainActivity extends AppCompatActivity implements MFS100Event {
 
 
-    EditText lblMessage;
+    Button btnSyncCapture;
+    Button btnStopCapture;
+    Button btnMatchISOTemplate;
 
+
+    TextView lblMessage;
+    EditText txtEventLog;
+    ImageView imgFinger;
+    byte[] Enroll_Template;
+    byte[] Verify_Template;
+    ScannerAction scannerAction = ScannerAction.Capture;
+    private FingerData lastCapFingerData = null;
+    private boolean isCaptureRunning = false;
+
+    @Override
+    public void OnDeviceAttached(int i, int i1, boolean b) {
+
+    }
+
+    @Override
+    public void OnDeviceDetached() {
+
+    }
+
+    @Override
+    public void OnHostCheckFailed(String s) {
+
+    }
+
+    @Override
+    public void onPointerCaptureChanged(boolean hasCapture) {
+
+    }
 
     int timeout = 10000;
     MFS100 mfs100 = null;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,7 +78,12 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
         setContentView(R.layout.activity_main);
 
 
-
+        FindFormControls();
+        try {
+            this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+        } catch (Exception e) {
+            Log.e("Error", e.toString());
+        }
         if (mfs100 == null) {
             mfs100 = new MFS100(this);
             mfs100.SetApplicationContext(MainActivity.this);
@@ -56,6 +91,31 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
             InitScanner();
         }
     }
+
+    private void FindFormControls() {
+    }
+
+    public void FindFormControls() {
+
+        btnMatchISOTemplate = (Button) findViewById(R.id.btnMatchISOTemplate);
+
+        lblMessage = (TextView) findViewById(R.id.lblMessage);
+        txtEventLog = (EditText) findViewById(R.id.txtEventLog);
+        imgFinger = (ImageView) findViewById(R.id.imgFinger);
+        btnSyncCapture = (Button) findViewById(R.id.btnSyncCapture);
+        btnStopCapture = (Button) findViewById(R.id.btnStopCapture);
+
+    }
+
+    private void SetLogOnUIThread(final String str) {
+
+        txtEventLog.post(new Runnable() {
+            public void run() {
+                txtEventLog.append("\n" + str);
+            }
+        });
+    }
+
 
     private void InitScanner() {
         try {
@@ -87,50 +147,17 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
         });
     }
 
-
-
-/*
-
-    Button btnInit;
-    Button btnUninit;
-    Button btnSyncCapture;
-    Button btnStopCapture;
-    Button btnMatchISOTemplate;
-    Button btnExtractISOImage;
-    Button btnExtractAnsi;
-    Button btnExtractWSQImage;
-    Button btnClearLog;
-    TextView lblMessage;
-    EditText txtEventLog;
-    ImageView imgFinger;
-    CheckBox cbFastDetection;
-
     private enum ScannerAction {
         Capture, Verify
     }
 
-    byte[] Enroll_Template;
-    byte[] Verify_Template;
-    private FingerData lastCapFingerData = null;
-    ScannerAction scannerAction = ScannerAction.Capture;
 
-    int timeout = 10000;
-    MFS100 mfs100 = null;
 
-    private boolean isCaptureRunning = false;
+/*
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_mfs100_sample);
 
-        FindFormControls();
-        try {
-            this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
-        } catch (Exception e) {
-            Log.e("Error", e.toString());
-        }
-    }
+
+
 
     @Override
     protected void onStart() {
@@ -156,21 +183,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
         super.onDestroy();
     }
 
-    public void FindFormControls() {
-        btnInit = (Button) findViewById(R.id.btnInit);
-        btnUninit = (Button) findViewById(R.id.btnUninit);
-        btnMatchISOTemplate = (Button) findViewById(R.id.btnMatchISOTemplate);
-        btnExtractISOImage = (Button) findViewById(R.id.btnExtractISOImage);
-        btnExtractAnsi = (Button) findViewById(R.id.btnExtractAnsi);
-        btnExtractWSQImage = (Button) findViewById(R.id.btnExtractWSQImage);
-        btnClearLog = (Button) findViewById(R.id.btnClearLog);
-        lblMessage = (TextView) findViewById(R.id.lblMessage);
-        txtEventLog = (EditText) findViewById(R.id.txtEventLog);
-        imgFinger = (ImageView) findViewById(R.id.imgFinger);
-        btnSyncCapture = (Button) findViewById(R.id.btnSyncCapture);
-        btnStopCapture = (Button) findViewById(R.id.btnStopCapture);
-        cbFastDetection = (CheckBox) findViewById(R.id.cbFastDetection);
-    }
+
 
     public void onControlClicked(View v) {
 
@@ -291,83 +304,12 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
         }
     }
 
-    private void ExtractANSITemplate() {
-        try {
-            if (lastCapFingerData == null) {
-                SetTextOnUIThread("Finger not capture");
-                return;
-            }
-            byte[] tempData = new byte[2000]; // length 2000 is mandatory
-            byte[] ansiTemplate;
-            int dataLen = mfs100.ExtractANSITemplate(lastCapFingerData.RawData(), tempData);
-            if (dataLen <= 0) {
-                if (dataLen == 0) {
-                    SetTextOnUIThread("Failed to extract ANSI Template");
-                } else {
-                    SetTextOnUIThread(mfs100.GetErrorMsg(dataLen));
-                }
-            } else {
-                ansiTemplate = new byte[dataLen];
-                System.arraycopy(tempData, 0, ansiTemplate, 0, dataLen);
-                WriteFile("ANSITemplate.ansi", ansiTemplate);
-                SetTextOnUIThread("Extract ANSI Template Success");
-            }
-        } catch (Exception e) {
-            Log.e("Error", "Extract ANSI Template Error", e);
-        }
-    }
 
-    private void ExtractISOImage() {
-        try {
-            if (lastCapFingerData == null) {
-                SetTextOnUIThread("Finger not capture");
-                return;
-            }
-            byte[] tempData = new byte[(mfs100.GetDeviceInfo().Width() * mfs100.GetDeviceInfo().Height()) + 1078];
-            byte[] isoImage;
-            int dataLen = mfs100.ExtractISOImage(lastCapFingerData.RawData(), tempData);
-            if (dataLen <= 0) {
-                if (dataLen == 0) {
-                    SetTextOnUIThread("Failed to extract ISO Image");
-                } else {
-                    SetTextOnUIThread(mfs100.GetErrorMsg(dataLen));
-                }
-            } else {
-                isoImage = new byte[dataLen];
-                System.arraycopy(tempData, 0, isoImage, 0, dataLen);
-                WriteFile("ISOImage.iso", isoImage);
-                SetTextOnUIThread("Extract ISO Image Success");
-            }
-        } catch (Exception e) {
-            Log.e("Error", "Extract ISO Image Error", e);
-        }
-    }
 
-    private void ExtractWSQImage() {
-        try {
-            if (lastCapFingerData == null) {
-                SetTextOnUIThread("Finger not capture");
-                return;
-            }
-            byte[] tempData = new byte[(mfs100.GetDeviceInfo().Width() * mfs100.GetDeviceInfo().Height()) + 1078];
-            byte[] wsqImage;
-            int dataLen = mfs100.ExtractWSQImage(lastCapFingerData.RawData(), tempData);
-            if (dataLen <= 0) {
-                if (dataLen == 0) {
-                    SetTextOnUIThread("Failed to extract WSQ Image");
-                } else {
-                    SetTextOnUIThread(mfs100.GetErrorMsg(dataLen));
-                }
-            } else {
-                wsqImage = new byte[dataLen];
-                System.arraycopy(tempData, 0, wsqImage, 0, dataLen);
-                WriteFile("WSQ.wsq", wsqImage);
-                SetTextOnUIThread("Extract WSQ Image Success");
-            }
-        } catch (Exception e) {
-            Log.e("Error", "Extract WSQ Image Error", e);
-        }
-    }
+
+
+
+
 
     private void UnInitScanner() {
         try {
@@ -413,23 +355,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
         });
     }
 
-    private void SetTextOnUIThread(final String str) {
 
-        lblMessage.post(new Runnable() {
-            public void run() {
-                lblMessage.setText(str);
-            }
-        });
-    }
-
-    private void SetLogOnUIThread(final String str) {
-
-        txtEventLog.post(new Runnable() {
-            public void run() {
-                txtEventLog.append("\n" + str);
-            }
-        });
-    }
 
     public void SetData2(FingerData fingerData) {
         if (scannerAction.equals(ScannerAction.Capture)) {
