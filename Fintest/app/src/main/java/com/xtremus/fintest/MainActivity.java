@@ -39,10 +39,18 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
     Button btnSyncCapture;
 
     Button btnMatchISOTemplate;
-
+    byte[] Enroll_Template;
+    byte[] Verify_Template;
+    ScannerAction scannerAction = ScannerAction.Capture;
+    int timeout = 10000;
+    MFS100 mfs100 = null;
+    private FingerData lastCapFingerData = null;
+    private boolean isCaptureRunning = false;
 
     TextView lblMessage;
     EditText txtEventLog;
+    private View v;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,17 +63,8 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
         } catch (Exception e) {
             Log.e("Error", e.toString());
         }
-
     }
 
-    byte[] Enroll_Template;
-    byte[] Verify_Template;
-    ScannerAction scannerAction = ScannerAction.Capture;
-    private FingerData lastCapFingerData = null;
-    private boolean isCaptureRunning = false;
-
-    int timeout = 10000;
-    MFS100 mfs100 = null;
 
     public void FindFormControls() {
 
@@ -75,16 +74,40 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
         txtEventLog = (EditText) findViewById(R.id.txtEventLog);
         btnSyncCapture = (Button) findViewById(R.id.enroll);
 
-
         if (mfs100 == null) {
             mfs100 = new MFS100(this);
             mfs100.SetApplicationContext(MainActivity.this);
-            Toast.makeText(this, "Init Success",
+            Toast.makeText(getApplicationContext(), "Init Success",
                     Toast.LENGTH_LONG).show();
             SetTextOnUIThread("Init Successful.");
         } else {
             InitScanner();
         }
+
+        btnSyncCapture.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                scannerAction = ScannerAction.Capture;
+                if (!isCaptureRunning) {
+                    Toast.makeText(getApplicationContext(), "Capture will start", Toast.LENGTH_SHORT).show();
+                    Capture();
+                }
+            }
+        });
+
+        btnMatchISOTemplate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                scannerAction = ScannerAction.Verify;
+                if (!isCaptureRunning) {
+                    SetTextOnUIThread("Match will start.");
+                    //StartSyncCapture();
+                    //StartSyncCapture();
+                }
+            }
+        });
+
 
     }
 
@@ -93,9 +116,10 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
 
             @Override
             public void run() {
+
                 SetTextOnUIThread("Capture Started");
                 try {
-                    Thread.sleep(5000);
+                    Thread.sleep(2000);
                 } catch (InterruptedException e) {
                     SetTextOnUIThread("Error");
                 }
@@ -104,6 +128,8 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                 isCaptureRunning = true;
                 try {
                     FingerData fingerData = new FingerData();
+
+
                     int ret = mfs100.AutoCapture(fingerData, timeout, false);
                     Log.e("StartSyncCapture.RET", "" + ret);
                     if (ret != 0) {
@@ -138,39 +164,9 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                 }
             }
         }).start();
+
     }
 
-
-
-
-    public void onControlClicked(View v) {
-
-        switch (v.getId()) {
-
-            case R.id.enroll:
-                scannerAction = ScannerAction.Capture;
-                if (!isCaptureRunning) {
-                    Toast.makeText(this, "Capture will start.", Toast.LENGTH_SHORT);
-
-                    Capture();
-                }
-                break;
-
-            case R.id.match:
-                scannerAction = ScannerAction.Verify;
-                if (!isCaptureRunning) {
-                    SetTextOnUIThread("Match will start.");
-                    //StartSyncCapture();
-                    //StartSyncCapture();
-                }
-                break;
-
-
-            default:
-                SetTextOnUIThread("Error in checking control");
-                break;
-        }
-    }
 
     private void InitScanner() {
         try {
@@ -186,7 +182,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                 SetLogOnUIThread(info);
             }
         } catch (Exception ex) {
-            Toast.makeText(this, "Init failed, unhandled exception",
+            Toast.makeText(getApplicationContext(), "Init failed, unhandled exception",
                     Toast.LENGTH_LONG).show();
             SetTextOnUIThread("Init failed, unhandled exception");
         }
@@ -326,7 +322,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
     public void OnHostCheckFailed(String err) {
         try {
             SetLogOnUIThread(err);
-            Toast.makeText(this, err, Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(), err, Toast.LENGTH_LONG).show();
         } catch (Exception ignored) {
         }
     } */
