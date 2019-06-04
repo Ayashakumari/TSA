@@ -32,11 +32,8 @@ import com.mantra.mfs100.MFS100Event;
 import java.io.File;
 import java.io.FileOutputStream;
 
-import com.google.android.gms.ads.doubleclick.PublisherAdView;
-import com.google.android.gms.ads.doubleclick.PublisherAdRequest;
-public class MainActivity extends AppCompatActivity implements MFS100Event {
 
-    private PublisherAdView mAd;
+public class MainActivity extends AppCompatActivity implements MFS100Event {
 
 
     Button btnSyncCapture;
@@ -50,11 +47,6 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        //ads
-        mAd = findViewById(R.id.adView);
-        PublisherAdRequest adRequest = new PublisherAdRequest.Builder().build();
-        mAd.loadAd(adRequest);
 
         //controls
         FindFormControls();
