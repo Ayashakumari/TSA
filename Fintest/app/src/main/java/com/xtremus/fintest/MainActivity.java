@@ -1,5 +1,7 @@
 package com.xtremus.fintest;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -19,7 +21,10 @@ import com.mantra.mfs100.MFS100;
 import com.mantra.mfs100.MFS100Event;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStream;
+
 
 
 public class MainActivity extends AppCompatActivity implements MFS100Event {
@@ -36,6 +41,8 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
     private FingerData lastCapFingerData = null;
     private boolean isCaptureRunning = false;
     private int id = 15000;
+    AlertDialog.Builder builder;
+
 
     TextView lblMessage;
     EditText txtEventLog;
@@ -45,7 +52,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        id=0;
         //controls
         FindFormControls();
         try {
@@ -82,6 +89,11 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                 scannerAction = ScannerAction.Capture;
                 if (!isCaptureRunning) {
                     Toast.makeText(getApplicationContext(), "Capture will start", Toast.LENGTH_SHORT).show();
+                    txtEventLog.post(new Runnable() {
+                        public void run() {
+                            txtEventLog.setText("", TextView.BufferType.EDITABLE);
+                        }
+                    });
                     Capture();
                 }
             }
@@ -112,13 +124,13 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                 try {
                     Thread.sleep(2000);
                 } catch (InterruptedException e) {
-                    SetTextOnUIThread("Error");
+                    SetTextOnUIThread("Error in sleep");
                 }
-
+                FingerData fingerData = new FingerData();
 
                 isCaptureRunning = true;
                 try {
-                    FingerData fingerData = new FingerData();
+
 
 
                     int ret = mfs100.AutoCapture(fingerData, timeout, false);
@@ -146,11 +158,13 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                                 + fingerData.Bpp() + "\nWSQ Info: "
                                 + fingerData.WSQInfo();
                         SetLogOnUIThread(log);
-                        SetData2(fingerData);
+
+                            SetData2(fingerData);
                     }
                 } catch (Exception ex) {
-                    SetTextOnUIThread("Error");
+                    SetTextOnUIThread("Exception in cap thread");
                 } finally {
+
                     isCaptureRunning = false;
                 }
             }
@@ -170,7 +184,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                         + " Make: " + mfs100.GetDeviceInfo().Make()
                         + " Model: " + mfs100.GetDeviceInfo().Model()
                         + "\nCertificate: " + mfs100.GetCertification();
-                SetLogOnUIThread(info);
+                //SetLogOnUIThread(info);
             }
         } catch (Exception ex) {
             Toast.makeText(getApplicationContext(), "Init failed, unhandled exception",
@@ -187,6 +201,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
             }
         });
     }
+
 
     @Override
     public void OnDeviceAttached(int i, int i1, boolean b) {
@@ -246,24 +261,57 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
     }
 
     public void SetData2(FingerData fingerData) {
+        String path1;
+        File file =null;
+        String ISO;
+        byte[] Enroll_Templat=null;
+        int ret=0;
         if (scannerAction.equals(ScannerAction.Capture)) {
             id += 1;
             Enroll_Template = new byte[fingerData.ISOTemplate().length];
-            System.arraycopy(fingerData.ISOTemplate(), 0, Enroll_Template, 0,
+        System.arraycopy(fingerData.ISOTemplate(), 0, Enroll_Template, 0,
                     fingerData.ISOTemplate().length);
         } else if (scannerAction.equals(ScannerAction.Verify)) {
-            int ret = null;
-            for (int i = 15001; i < = id; i++) {
+
                 Verify_Template = new byte[fingerData.ISOTemplate().length];
                 System.arraycopy(fingerData.ISOTemplate(), 0, Verify_Template, 0,
                         fingerData.ISOTemplate().length);
-                ret = mfs100.MatchISO(Enroll_Template, Verify_Template);
-                if (ret >= 1400) {
-                    break;
+            try {
+                path1 = Environment.getExternalStorageDirectory()
+                        + "//FingerData";
+                SetTextOnUIThread("Path is set");
+
+            for (int i = 1; i <= id; i++) {
+                SetTextOnUIThread("For loop" + i);
+                InputStream is = null;
+                ISO = "ISOTemplate" + i;
+                path1 += ISO;
+                try{
+                    file = new File(path1);
+                }catch (Exception e){
+                    SetLogOnUIThread("Exception in file path"+ e);
                 }
-            }
 
+                    is = new FileInputStream(file);
+                    Enroll_Templat = new byte[(int)file.length()];
+                try {
+                    is.read(Enroll_Templat);
+                }catch(Exception e)
+                {
+                    SetTextOnUIThread("Error in input stream");
+                }
 
+                /*System.arraycopy(path1, 0, Enroll_Template, 0,
+                        fingerData.ISOTemplate().length);*/
+
+               ret = mfs100.MatchISO(Enroll_Templat, Verify_Template);
+                if (ret >= 1400)
+                {
+                 SetTextOnUIThread("ret if block");
+                 break;
+                }
+
+           }
             if (ret < 0) {
                 SetTextOnUIThread("Error: " + ret + "(" + mfs100.GetErrorMsg(ret) + ")");
             } else {
@@ -272,6 +320,9 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                 } else {
                     SetTextOnUIThread("Finger not matched, score: " + ret);
                 }
+            }
+            }catch(Exception e) {
+                SetTextOnUIThread("Exception in path");
             }
         }
         String bmpstr = "Bitmap" + id + ".bmp";
