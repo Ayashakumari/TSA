@@ -8,8 +8,8 @@
 
     <TextView
         android:id="@+id/textView"
-        android:layout_width="399dp"
-        android:layout_height="55dp"
+        android:layout_width="399sp"
+        android:layout_height="55sp"
         android:layout_marginTop="24dp"
         android:text="@string/authenticate"
         android:textAlignment="center"
@@ -23,8 +23,8 @@
 
     <Button
         android:id="@+id/enroll"
-        android:layout_width="160dp"
-        android:layout_height="120dp"
+        android:layout_width="160sp"
+        android:layout_height="120sp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="24dp"
         android:layout_marginEnd="16dp"
@@ -38,8 +38,8 @@
 
     <EditText
         android:id="@+id/txtEventLog"
-        android:layout_width="363dp"
-        android:layout_height="315dp"
+        android:layout_width="363sp"
+        android:layout_height="315sp"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="8dp"
         android:clickable="false"
@@ -55,8 +55,8 @@
 
     <Button
         android:id="@+id/match"
-        android:layout_width="160dp"
-        android:layout_height="120dp"
+        android:layout_width="160sp"
+        android:layout_height="120sp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="24dp"
         android:layout_marginEnd="16dp"
@@ -67,8 +67,8 @@
 
     <TextView
         android:id="@+id/lblMessage"
-        android:layout_width="382dp"
-        android:layout_height="40dp"
+        android:layout_width="382sp"
+        android:layout_height="40sp"
 
         android:layout_marginStart="8dp"
         android:layout_marginTop="16dp"

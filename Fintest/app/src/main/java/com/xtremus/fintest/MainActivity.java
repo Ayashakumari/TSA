@@ -35,6 +35,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
     MFS100 mfs100 = null;
     private FingerData lastCapFingerData = null;
     private boolean isCaptureRunning = false;
+    private int id = 15000;
 
     TextView lblMessage;
     EditText txtEventLog;
@@ -221,14 +222,9 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
         Capture, Verify
     }
 
-
-
-
-
-
-
     private void WriteFile(String filename, byte[] bytes) {
         try {
+
             String path = Environment.getExternalStorageDirectory()
                     + "//FingerData";
 
@@ -251,14 +247,23 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
 
     public void SetData2(FingerData fingerData) {
         if (scannerAction.equals(ScannerAction.Capture)) {
+            id += 1;
             Enroll_Template = new byte[fingerData.ISOTemplate().length];
             System.arraycopy(fingerData.ISOTemplate(), 0, Enroll_Template, 0,
                     fingerData.ISOTemplate().length);
         } else if (scannerAction.equals(ScannerAction.Verify)) {
-            Verify_Template = new byte[fingerData.ISOTemplate().length];
-            System.arraycopy(fingerData.ISOTemplate(), 0, Verify_Template, 0,
-                    fingerData.ISOTemplate().length);
-            int ret = mfs100.MatchISO(Enroll_Template, Verify_Template);
+            int ret = null;
+            for (int i = 15001; i < = id; i++) {
+                Verify_Template = new byte[fingerData.ISOTemplate().length];
+                System.arraycopy(fingerData.ISOTemplate(), 0, Verify_Template, 0,
+                        fingerData.ISOTemplate().length);
+                ret = mfs100.MatchISO(Enroll_Template, Verify_Template);
+                if (ret >= 1400) {
+                    break;
+                }
+            }
+
+
             if (ret < 0) {
                 SetTextOnUIThread("Error: " + ret + "(" + mfs100.GetErrorMsg(ret) + ")");
             } else {
@@ -269,11 +274,11 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                 }
             }
         }
+        String bmpstr = "Bitmap" + id + ".bmp";
+        String isostr = "ISOTemplate" + id + ".iso";
 
-        
-        WriteFile("Raw.raw", fingerData.RawData());
-        WriteFile("Bitmap.bmp", fingerData.FingerImage());
-        WriteFile("ISOTemplate.iso", fingerData.ISOTemplate());
+        WriteFile(bmpstr, fingerData.FingerImage());
+        WriteFile(isostr, fingerData.ISOTemplate());
     }
 
   //  @Override
