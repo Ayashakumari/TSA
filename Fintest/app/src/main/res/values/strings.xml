@@ -1,3 +1,8 @@
 <resources>
-    <string name="app_name">Fintest</string>
+    <string name="app_name">Finger-print Implementation</string>
+    <string name="processing_here">Processing here...</string>
+    <string name="match_verify">Match/Verify</string>
+    <string name="logging">Logging...</string>
+    <string name="enroll_fingerprint">Enroll Fingerprint</string>
+    <string name="authenticate">Authenticate</string>
 </resources>
