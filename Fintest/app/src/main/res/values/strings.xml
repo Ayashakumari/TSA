@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Finger-print Implementation</string>
+    <string name="app_name">FP Implementation</string>
     <string name="processing_here">Processing here...</string>
     <string name="match_verify">Match/Verify</string>
     <string name="logging">Logging...</string>

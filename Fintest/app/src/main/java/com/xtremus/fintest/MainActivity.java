@@ -1,5 +1,7 @@
 package com.xtremus.fintest;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -13,6 +15,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.mantra.mfs100.FingerData;
 import com.mantra.mfs100.MFS100;
@@ -40,7 +44,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event
     TextView lblMessage;
     EditText txtEventLog;
     private View v;
-
+    int reqcode = 200;
      @Override
      public void OnDeviceAttached(int i, int i1, boolean b) {
          
@@ -65,7 +69,11 @@ public class MainActivity extends AppCompatActivity implements MFS100Event
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            // Permission is not granted
+            ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},reqcode );
+        }
         //controls
         FindFormControls();
         try {
