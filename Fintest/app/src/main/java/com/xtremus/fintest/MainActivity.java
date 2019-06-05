@@ -22,7 +22,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 
 
-public class MainActivity extends AppCompatActivity implements MFS100Event {
+public class MainActivity extends AppCompatActivity implements MFS100Event
+ {
 
 
     Button btnSyncCapture;
@@ -39,7 +40,24 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
     TextView lblMessage;
     EditText txtEventLog;
     private View v;
-	private enum ScannerAction {
+
+     @Override
+     public void OnDeviceAttached(int i, int i1, boolean b) {
+         
+     }
+
+     @Override
+     public void OnDeviceDetached() {
+
+     }
+
+     @Override
+     public void OnHostCheckFailed(String s) {
+
+     }
+
+
+     private enum ScannerAction {
         Capture, Verify
     }
 	
@@ -101,26 +119,6 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
             }
         });
 	}
-	
-    private void InitScanner() {
-        try {
-            int ret = mfs100.Init();
-            if (ret != 0) {
-                SetTextOnUIThread(mfs100.GetErrorMsg(ret));
-            } else {
-                SetTextOnUIThread("Init success");
-                /*String info = "Serial: " + mfs100.GetDeviceInfo().SerialNo()
-                        + " Make: " + mfs100.GetDeviceInfo().Make()
-                        + " Model: " + mfs100.GetDeviceInfo().Model()
-                        + "\nCertificate: " + mfs100.GetCertification();
-                SetLogOnUIThread(info);*/
-            }
-        } catch (Exception ex) {
-            Toast.makeText(this, "Init failed, unhandled exception",
-                    Toast.LENGTH_LONG).show();
-            SetTextOnUIThread("Init failed, unhandled exception");
-        }
-    }
 
 
     private void Capture() {
