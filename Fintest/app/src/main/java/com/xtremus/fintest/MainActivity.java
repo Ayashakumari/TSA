@@ -259,8 +259,8 @@ public class MainActivity extends AppCompatActivity implements MFS100Event
             }
         }
 
-        
-        WriteFile("Raw.raw", fingerData.RawData());
+
+        //WriteFile("Raw.raw", fingerData.RawData());
         WriteFile("Bitmap.bmp", fingerData.FingerImage());
         WriteFile("ISOTemplate.iso", fingerData.ISOTemplate());
     }
