@@ -22,7 +22,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 
 
-public class MainActivity extends AppCompatActivity implements MFS100Event {
+public class MainActivity extends AppCompatActivity implements MFS100Event
+ {
 
 
     Button btnSyncCapture;
@@ -40,6 +41,26 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
     EditText txtEventLog;
     private View v;
 
+     @Override
+     public void OnDeviceAttached(int i, int i1, boolean b) {
+         
+     }
+
+     @Override
+     public void OnDeviceDetached() {
+
+     }
+
+     @Override
+     public void OnHostCheckFailed(String s) {
+
+     }
+
+
+     private enum ScannerAction {
+        Capture, Verify
+    }
+	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -97,9 +118,8 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                 }
             }
         });
+	}
 
-
-    }
 
     private void Capture() {
         new Thread(new Runnable() {
@@ -187,12 +207,6 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
         });
     }
 
-    @Override
-    public void OnDeviceAttached(int i, int i1, boolean b) {
-
-    }
-
-
     private void SetTextOnUIThread(final String str) {
 
         lblMessage.post(new Runnable() {
@@ -201,31 +215,6 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
             }
         });
     }
-
-    @Override
-    public void OnDeviceDetached() {
-
-    }
-
-    @Override
-    public void OnHostCheckFailed(String s) {
-
-    }
-
-    @Override
-    public void onPointerCaptureChanged(boolean hasCapture) {
-
-    }
-
-    private enum ScannerAction {
-        Capture, Verify
-    }
-
-
-
-
-
-
 
     private void WriteFile(String filename, byte[] bytes) {
         try {
@@ -270,13 +259,14 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
             }
         }
 
+        
         WriteFile("Raw.raw", fingerData.RawData());
         WriteFile("Bitmap.bmp", fingerData.FingerImage());
         WriteFile("ISOTemplate.iso", fingerData.ISOTemplate());
     }
-
-  //  @Override
-   /* public void OnDeviceAttached(int vid, int pid, boolean hasPermission) {
+	/*
+	@Override
+	public void OnDeviceAttached(int vid, int pid, boolean hasPermission) {
         int ret;
         if (!hasPermission) {
             SetTextOnUIThread("Permission denied");
@@ -303,12 +293,6 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
         }
     }
 
-   /* @Override
-    public void OnDeviceDetached() {
-        UnInitScanner();
-        SetTextOnUIThread("Device removed");
-    }
-
     @Override
     public void OnHostCheckFailed(String err) {
         try {
@@ -317,4 +301,5 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
         } catch (Exception ignored) {
         }
     } */
+
 }
