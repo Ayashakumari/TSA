@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "1005254887557-pl3189pe4ehgh92kkbocofuj7au3m50n.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.xtremus.fintest",
+            "certificate_hash": "d5ec6ba41c569a52e09e5ba878fa2dd5fd9d534c"
+          }
+        },
+        {
           "client_id": "1005254887557-kia5ptcqadt44kkm04vkki6p0dhc3euk.apps.googleusercontent.com",
           "client_type": 3
         }

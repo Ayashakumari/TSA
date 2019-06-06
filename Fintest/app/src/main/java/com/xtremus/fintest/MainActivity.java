@@ -1,11 +1,14 @@
 package com.xtremus.fintest;
 
 import android.Manifest;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Environment;
+import android.text.InputType;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
@@ -18,6 +21,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 import com.mantra.mfs100.FingerData;
 import com.mantra.mfs100.MFS100;
 import com.mantra.mfs100.MFS100Event;
@@ -27,24 +32,27 @@ import java.io.FileOutputStream;
 
 
 public class MainActivity extends AppCompatActivity implements MFS100Event
- {
+{
+        private StorageReference mStorageRef;
+        Button btnSyncCapture;
+        Button btnMatchISOTemplate;
+        byte[] Enroll_Template;
+        byte[] Verify_Template;
+        ScannerAction scannerAction = ScannerAction.Capture;
+        int timeout = 10000;
+        MFS100 mfs100 = null;
+        private FingerData lastCapFingerData = null;
+        private boolean isCaptureRunning = false;
+
+        TextView lblMessage;
+        EditText txtEventLog;
+        private View v;
+        int reqcode = 200;
+
+        private long id = 1500;
+        private String m_Text = "";
 
 
-    Button btnSyncCapture;
-
-    Button btnMatchISOTemplate;
-    byte[] Enroll_Template;
-    byte[] Verify_Template;
-    ScannerAction scannerAction = ScannerAction.Capture;
-    int timeout = 10000;
-    MFS100 mfs100 = null;
-    private FingerData lastCapFingerData = null;
-    private boolean isCaptureRunning = false;
-
-    TextView lblMessage;
-    EditText txtEventLog;
-    private View v;
-    int reqcode = 200;
      @Override
      public void OnDeviceAttached(int i, int i1, boolean b) {
          
@@ -69,6 +77,8 @@ public class MainActivity extends AppCompatActivity implements MFS100Event
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mStorageRef = FirebaseStorage.getInstance().getReference();
+
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
             // Permission is not granted
@@ -122,7 +132,6 @@ public class MainActivity extends AppCompatActivity implements MFS100Event
                 if (!isCaptureRunning) {
                     SetTextOnUIThread("Match will start.");
                     Capture();
-
                 }
             }
         });
@@ -227,7 +236,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event
     private void WriteFile(String filename, byte[] bytes) {
         try {
             String path = Environment.getExternalStorageDirectory()
-                    + "//FingerData";
+                    + "//FingerData//" + id;
 
             File file = new File(path);
             if (!file.exists()) {
