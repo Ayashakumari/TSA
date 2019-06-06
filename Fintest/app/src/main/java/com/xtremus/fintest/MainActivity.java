@@ -1,7 +1,6 @@
 package com.xtremus.fintest;
 
-import android.app.AlertDialog;
-import android.content.DialogInterface;
+
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -20,6 +19,7 @@ import com.mantra.mfs100.FingerData;
 import com.mantra.mfs100.MFS100;
 import com.mantra.mfs100.MFS100Event;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -38,10 +38,9 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
     ScannerAction scannerAction = ScannerAction.Capture;
     int timeout = 10000;
     MFS100 mfs100 = null;
-    private FingerData lastCapFingerData = null;
+   private FingerData lastCapFingerData = null;
     private boolean isCaptureRunning = false;
-    private int id = 15000;
-    AlertDialog.Builder builder;
+    private int id = 1500;
 
 
     TextView lblMessage;
@@ -52,7 +51,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        id=0;
+
         //controls
         FindFormControls();
         try {
@@ -102,6 +101,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
         btnMatchISOTemplate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                InitScanner();
                 scannerAction = ScannerAction.Verify;
                 if (!isCaptureRunning) {
                     SetTextOnUIThread("Match will start.");
@@ -158,7 +158,6 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                                 + fingerData.Bpp() + "\nWSQ Info: "
                                 + fingerData.WSQInfo();
                         SetLogOnUIThread(log);
-
                             SetData2(fingerData);
                     }
                 } catch (Exception ex) {
@@ -172,7 +171,6 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
 
     }
 
-
     private void InitScanner() {
         try {
             int ret = mfs100.Init();
@@ -184,7 +182,6 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                         + " Make: " + mfs100.GetDeviceInfo().Make()
                         + " Model: " + mfs100.GetDeviceInfo().Model()
                         + "\nCertificate: " + mfs100.GetCertification();
-                //SetLogOnUIThread(info);
             }
         } catch (Exception ex) {
             Toast.makeText(getApplicationContext(), "Init failed, unhandled exception",
@@ -241,7 +238,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
         try {
 
             String path = Environment.getExternalStorageDirectory()
-                    + "//FingerData";
+                    + "//FingerData//"+id;
 
             File file = new File(path);
             if (!file.exists()) {
@@ -271,47 +268,38 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
             Enroll_Template = new byte[fingerData.ISOTemplate().length];
         System.arraycopy(fingerData.ISOTemplate(), 0, Enroll_Template, 0,
                     fingerData.ISOTemplate().length);
+            String bmpstr = "Bitmap" + id + ".bmp";
+            String isostr = "ISOTemplate" + id + ".iso";
+
+            WriteFile(bmpstr, fingerData.FingerImage());
+            WriteFile(isostr, fingerData.ISOTemplate());
         } else if (scannerAction.equals(ScannerAction.Verify)) {
 
                 Verify_Template = new byte[fingerData.ISOTemplate().length];
                 System.arraycopy(fingerData.ISOTemplate(), 0, Verify_Template, 0,
                         fingerData.ISOTemplate().length);
-            try {
-                path1 = Environment.getExternalStorageDirectory()
-                        + "//FingerData";
-                SetTextOnUIThread("Path is set");
-
-            for (int i = 1; i <= id; i++) {
-                SetTextOnUIThread("For loop" + i);
-                InputStream is = null;
-                ISO = "ISOTemplate" + i;
-                path1 += ISO;
+            path1 = Environment.getExternalStorageDirectory()
+                    + "//FingerData//"+id+"//";
+            InputStream is;
                 try{
+                    ISO = "ISOTemplate" +id+".iso";
+                    path1 += ISO;
                     file = new File(path1);
+                    is = new FileInputStream(file);
+                    Enroll_Templat = new byte[(int)file.length()];
+                    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                    int nRead;
+                    byte[] data = new byte[1024];
+                    while((nRead= is.read(data, 0, data.length))!=-1){
+                        buffer.write(data,0,nRead);
+                    }
+                    buffer.flush();
+                    Enroll_Templat = buffer.toByteArray();
+                    ret = mfs100.MatchISO(Enroll_Templat, Verify_Template);
                 }catch (Exception e){
                     SetLogOnUIThread("Exception in file path"+ e);
                 }
 
-                    is = new FileInputStream(file);
-                    Enroll_Templat = new byte[(int)file.length()];
-                try {
-                    is.read(Enroll_Templat);
-                }catch(Exception e)
-                {
-                    SetTextOnUIThread("Error in input stream");
-                }
-
-                /*System.arraycopy(path1, 0, Enroll_Template, 0,
-                        fingerData.ISOTemplate().length);*/
-
-               ret = mfs100.MatchISO(Enroll_Templat, Verify_Template);
-                if (ret >= 1400)
-                {
-                 SetTextOnUIThread("ret if block");
-                 break;
-                }
-
-           }
             if (ret < 0) {
                 SetTextOnUIThread("Error: " + ret + "(" + mfs100.GetErrorMsg(ret) + ")");
             } else {
@@ -321,15 +309,8 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                     SetTextOnUIThread("Finger not matched, score: " + ret);
                 }
             }
-            }catch(Exception e) {
-                SetTextOnUIThread("Exception in path");
-            }
         }
-        String bmpstr = "Bitmap" + id + ".bmp";
-        String isostr = "ISOTemplate" + id + ".iso";
-
-        WriteFile(bmpstr, fingerData.FingerImage());
-        WriteFile(isostr, fingerData.ISOTemplate());
+        
     }
 
   //  @Override
