@@ -129,6 +129,10 @@ public class MainActivity extends AppCompatActivity implements MFS100Event
             @Override
             public void onClick(View v) {
                 scannerAction = ScannerAction.Verify;
+
+
+
+
                 if (!isCaptureRunning) {
                     SetTextOnUIThread("Match will start.");
                     Capture();
