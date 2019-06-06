@@ -20,11 +20,13 @@ import com.mantra.mfs100.MFS100;
 import com.mantra.mfs100.MFS100Event;
 
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
-
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 
 public class MainActivity extends AppCompatActivity implements MFS100Event {
@@ -235,6 +237,8 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
     }
 
     private void WriteFile(String filename, byte[] bytes) {
+        HttpURLConnection conn = null;
+        DataOutputStream dos = null;
         try {
 
             String path = Environment.getExternalStorageDirectory()
@@ -250,11 +254,66 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                 file.createNewFile();
             }
             FileOutputStream stream = new FileOutputStream(path);
+
             stream.write(bytes);
             stream.close();
-        } catch (Exception e1) {
-            e1.printStackTrace();
+
+            FileInputStream fis = new FileInputStream(file);
+
+            //sending copy to server
+            String lineEnd = "\r\n";
+            String twoHyphens = "--";
+            String boundary = "*****";
+            URL url = new URL("http://tsassessors.in/ISDAT/evaluate_app/assessor_api/upload_biometrics.php");
+            conn = (HttpURLConnection) url.openConnection();
+            SetTextOnUIThread("Connection opened");
+            conn.setDoInput(true);
+            conn.setDoOutput(true);
+            conn.setUseCaches(false);
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Connection", "Keep-Alive");
+            conn.setRequestProperty("Content-Type","multipart/form-data;boundary="+boundary);
+            conn.setRequestProperty(String.valueOf(id), path);
+            Toast.makeText(this,"Connection Open",Toast.LENGTH_SHORT).show();
+
+
+            int bytesRead,bytesAvailable,bufferSize;
+            byte[] buffer;
+            int maxBufferSize = 1*1024*1024;
+
+            dos = new DataOutputStream(conn.getOutputStream());
+            dos.writeBytes(twoHyphens+boundary+lineEnd);
+            dos.writeBytes("Content-Disposition: form-data; name=\"id\";filename=\"" + path + "\"" + lineEnd);
+            dos.writeBytes(lineEnd);
+            bytesAvailable = fis.available();
+
+            bufferSize= Math.min(bytesAvailable,maxBufferSize);
+            buffer = new byte[bufferSize];
+
+            bytesRead = fis.read(buffer , 0 , bufferSize);
+
+            while(bytesRead > 0)
+            {
+                dos.write(buffer,0,bufferSize);
+                bytesAvailable = fis.available();
+                bufferSize = Math.min(bytesAvailable,maxBufferSize);
+                bytesRead = fis.read(buffer , 0 , bufferSize);
+
+            }
+            //Toast.makeText(this,"File Sent",Toast.LENGTH_SHORT).show();
+            if(conn.getResponseCode() == 200)
+                //Toast.makeText(this,"Finger Uploaded.",Toast.LENGTH_SHORT).show();
+            SetTextOnUIThread("File uploaded");
+            SetLogOnUIThread(conn.getResponseMessage());
+
+            dos.flush();
+            dos.close();
+
+        } catch (Exception e) {
+           SetLogOnUIThread("Error " + e);
+           e.printStackTrace();
         }
+
     }
 
     public void SetData2(FingerData fingerData) {
@@ -282,7 +341,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                     + "//FingerData//"+id+"//";
             InputStream is;
                 try{
-                    ISO = "ISOTemplate" +id+".iso";
+                    ISO = "ISOTemplate"+id+".iso";
                     path1 += ISO;
                     file = new File(path1);
                     is = new FileInputStream(file);
@@ -310,7 +369,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                 }
             }
         }
-        
+
     }
 
   //  @Override
