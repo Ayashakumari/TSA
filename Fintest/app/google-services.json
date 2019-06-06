@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "1005254887557",
+    "firebase_url": "https://fintestmantra.firebaseio.com",
+    "project_id": "fintestmantra",
+    "storage_bucket": "fintestmantra.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1005254887557:android:42f2beec20407bb1",
+        "android_client_info": {
+          "package_name": "com.xtremus.fintest"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1005254887557-kia5ptcqadt44kkm04vkki6p0dhc3euk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCOz7n1TBq_hlRLf-UAdoMrOu4q9dgRKkE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1005254887557-kia5ptcqadt44kkm04vkki6p0dhc3euk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
