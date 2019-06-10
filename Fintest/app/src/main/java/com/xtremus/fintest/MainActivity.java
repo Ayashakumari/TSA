@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Environment;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
@@ -15,9 +16,23 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.android.volley.Cache;
+import com.android.volley.Network;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.BasicNetwork;
+import com.android.volley.toolbox.DiskBasedCache;
+import com.android.volley.toolbox.HurlStack;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.mantra.mfs100.FingerData;
 import com.mantra.mfs100.MFS100;
 import com.mantra.mfs100.MFS100Event;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -25,6 +40,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -237,8 +253,6 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
     }
 
     private void WriteFile(String filename, byte[] bytes) {
-        HttpURLConnection conn = null;
-        DataOutputStream dos = null;
         try {
 
             String path = Environment.getExternalStorageDirectory()
@@ -254,60 +268,42 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                 file.createNewFile();
             }
             FileOutputStream stream = new FileOutputStream(path);
-
             stream.write(bytes);
             stream.close();
 
-            FileInputStream fis = new FileInputStream(file);
+            ////////////////////////////----Writing file to server-------------////////////////
 
-            //sending copy to server
-            String lineEnd = "\r\n";
-            String twoHyphens = "--";
-            String boundary = "*****";
-            URL url = new URL("http://tsassessors.in/ISDAT/evaluate_app/assessor_api/upload_biometrics.php");
-            conn = (HttpURLConnection) url.openConnection();
-            SetTextOnUIThread("Connection opened");
-            conn.setDoInput(true);
-            conn.setDoOutput(true);
-            conn.setUseCaches(false);
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Connection", "Keep-Alive");
-            conn.setRequestProperty("Content-Type","multipart/form-data;boundary="+boundary);
-            conn.setRequestProperty(String.valueOf(id), path);
-            Toast.makeText(this,"Connection Open",Toast.LENGTH_SHORT).show();
-
-
-            int bytesRead,bytesAvailable,bufferSize;
-            byte[] buffer;
-            int maxBufferSize = 1*1024*1024;
-
-            dos = new DataOutputStream(conn.getOutputStream());
-            dos.writeBytes(twoHyphens+boundary+lineEnd);
-            dos.writeBytes("Content-Disposition: form-data; name=\"id\";filename=\"" + path + "\"" + lineEnd);
-            dos.writeBytes(lineEnd);
-            bytesAvailable = fis.available();
-
-            bufferSize= Math.min(bytesAvailable,maxBufferSize);
-            buffer = new byte[bufferSize];
-
-            bytesRead = fis.read(buffer , 0 , bufferSize);
-
-            while(bytesRead > 0)
-            {
-                dos.write(buffer,0,bufferSize);
-                bytesAvailable = fis.available();
-                bufferSize = Math.min(bytesAvailable,maxBufferSize);
-                bytesRead = fis.read(buffer , 0 , bufferSize);
-
+            String uploadUrl = "http://tsassessors.in/ISDAT/evaluate_app/assessor_api/upload_biometrics.php";
+            JSONObject jsonObject = new JSONObject();
+            final RequestQueue rQueue;
+            rQueue = Volley.newRequestQueue(MainActivity.this);
+            try{
+                //String encodedImage = Base64.encodeToString(bytes, Base64.DEFAULT);
+                int fileName = id;
+                //String fileName = "ISOTemplate" + id + ".iso";
+                jsonObject.put("name",fileName);
+                jsonObject.put("file",bytes);
+            }catch(JSONException e){
+                SetLogOnUIThread("Error json block" + e.toString());
             }
-            //Toast.makeText(this,"File Sent",Toast.LENGTH_SHORT).show();
-            if(conn.getResponseCode() == 200)
-                //Toast.makeText(this,"Finger Uploaded.",Toast.LENGTH_SHORT).show();
-            SetTextOnUIThread("File uploaded");
-            SetLogOnUIThread(conn.getResponseMessage());
+            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, uploadUrl, jsonObject,
+                    new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject jsonObject) {
+                            SetLogOnUIThread("Json response"+jsonObject.toString());
+                            rQueue.getCache().clear();
+                            Toast.makeText(getApplication(), "File Uploaded Successfully", Toast.LENGTH_LONG).show();
+                        }
+                    }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError volleyError) {
+                    SetLogOnUIThread("Volley error "+ volleyError.toString());
 
-            dos.flush();
-            dos.close();
+                }
+            });
+            rQueue.add(jsonObjectRequest);
+
+        ////////////////------End---Block---/////////////////
 
         } catch (Exception e) {
            SetLogOnUIThread("Error " + e);
