@@ -3,9 +3,11 @@ package com.xtremus.fintest;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.text.InputType;
@@ -17,23 +19,29 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 import com.mantra.mfs100.FingerData;
 import com.mantra.mfs100.MFS100;
 import com.mantra.mfs100.MFS100Event;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 
 
 public class MainActivity extends AppCompatActivity implements MFS100Event
 {
-        private StorageReference mStorageRef;
+
         Button btnSyncCapture;
         Button btnMatchISOTemplate;
         byte[] Enroll_Template;
@@ -51,9 +59,17 @@ public class MainActivity extends AppCompatActivity implements MFS100Event
 
         private long id = 1500;
         private String m_Text = "";
+        //private Intent i;
 
 
-     @Override
+        //Firebase code
+        FirebaseStorage storage = FirebaseStorage.getInstance();
+        // Create a storage reference from our app
+        StorageReference storageRef = storage.getReference();
+
+
+
+    @Override
      public void OnDeviceAttached(int i, int i1, boolean b) {
          
      }
@@ -77,7 +93,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mStorageRef = FirebaseStorage.getInstance().getReference();
+
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -185,7 +201,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event
                                 + fingerData.GrayScale() + "\nBits Per Pixal: "
                                 + fingerData.Bpp() + "\nWSQ Info: "
                                 + fingerData.WSQInfo();
-                        SetLogOnUIThread(log);
+                        SetLogOnUIThread("\nQuality: " + fingerData.Quality());
                         SetData2(fingerData);
                     }
                 } catch (Exception ex) {
@@ -210,7 +226,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event
                         + " Make: " + mfs100.GetDeviceInfo().Make()
                         + " Model: " + mfs100.GetDeviceInfo().Model()
                         + "\nCertificate: " + mfs100.GetCertification();
-                SetLogOnUIThread(info);
+                //SetLogOnUIThread(info);
             }
         } catch (Exception ex) {
             Toast.makeText(getApplicationContext(), "Init failed, unhandled exception",
@@ -223,7 +239,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event
 
         txtEventLog.post(new Runnable() {
             public void run() {
-                txtEventLog.append("\n" + str);
+                txtEventLog.append("\n\n\n\n" + str);
             }
         });
     }
@@ -254,6 +270,41 @@ public class MainActivity extends AppCompatActivity implements MFS100Event
             FileOutputStream stream = new FileOutputStream(path);
             stream.write(bytes);
             stream.close();
+
+            /////////////////////Firebase
+            // Create a child reference
+            // imagesRef now points to "images"
+            StorageReference fingersRef = storageRef.child(String.valueOf(id));
+
+            // Child references can also take paths
+            // spaceRef now points to "images/space.jpg
+            // imagesRef still points to "images"
+            StorageReference printRef = storageRef.child(id + "/nj"+ id + ".iso");
+
+            UploadTask uploadTask = printRef.putBytes(bytes);
+            uploadTask.addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception exception) {
+                    // Handle unsuccessful uploads
+                    SetTextOnUIThread("Unsuccessful Upload");
+                }
+            }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                @Override
+                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                    // taskSnapshot.getMetadata() contains file metadata such as size, content-type, etc.
+                    // ...
+                    SetTextOnUIThread("Upload Success.");
+                    SetLogOnUIThread(String.valueOf(taskSnapshot.getBytesTransferred()/1024) + "KB Uploaded." );
+                }
+            });
+
+
+
+
+            ///////////////////////////////////
+            //i = new Intent(MainActivity.this,StorageActivity.class);
+
+
         } catch (Exception e1) {
             e1.printStackTrace();
         }
@@ -261,6 +312,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event
 
     public void SetData2(FingerData fingerData) {
         if (scannerAction.equals(ScannerAction.Capture)) {
+            id +=1 ;
             Enroll_Template = new byte[fingerData.ISOTemplate().length];
             System.arraycopy(fingerData.ISOTemplate(), 0, Enroll_Template, 0,
                     fingerData.ISOTemplate().length);
