@@ -364,7 +364,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                            try {
                                JSONObject object = new JSONObject(response);
                                servPath = object.getString("msg");
-                               SetLogOnUIThread("servPath= "+ servPath);
+                               //SetLogOnUIThread("servPath= "+ servPath);
 
                            }catch(JSONException e){
                                SetLogOnUIThread("Error in array= "+e.toString());
