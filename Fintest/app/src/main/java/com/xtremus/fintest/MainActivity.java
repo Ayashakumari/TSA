@@ -26,6 +26,7 @@ import com.android.volley.toolbox.BasicNetwork;
 import com.android.volley.toolbox.DiskBasedCache;
 import com.android.volley.toolbox.HurlStack;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.mantra.mfs100.FingerData;
 import com.mantra.mfs100.MFS100;
@@ -39,10 +40,13 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class MainActivity extends AppCompatActivity implements MFS100Event {
@@ -256,7 +260,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
         try {
 
             String path = Environment.getExternalStorageDirectory()
-                    + "//FingerData//"+id;
+                    + "//FingerData//" + id;
 
             File file = new File(path);
             if (!file.exists()) {
@@ -272,41 +276,49 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
             stream.close();
 
             ////////////////////////////----Writing file to server-------------////////////////
-
+            if(filename.equals("ISOTemplate" + id + ".iso")){
             String uploadUrl = "http://tsassessors.in/ISDAT/evaluate_app/assessor_api/upload_biometrics.php";
-            JSONObject jsonObject = new JSONObject();
             final RequestQueue rQueue;
-            rQueue = Volley.newRequestQueue(MainActivity.this);
-            try{
-                //String encodedImage = Base64.encodeToString(bytes, Base64.DEFAULT);
-                int fileName = id;
-                //String fileName = "ISOTemplate" + id + ".iso";
-                jsonObject.put("name",fileName);
-                jsonObject.put("file",bytes);
-            }catch(JSONException e){
-                SetLogOnUIThread("Error json block" + e.toString());
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            try {
+                os.write(bytes);
+                os.close();
+            } catch (IOException e) {
+                SetLogOnUIThread("Unable to convert file" + e.toString());
             }
-            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, uploadUrl, jsonObject,
-                    new Response.Listener<JSONObject>() {
+            final String encodedFile = Base64.encodeToString(os.toByteArray(), Base64.DEFAULT);
+            StringRequest stringRequest = new StringRequest(Request.Method.POST, uploadUrl,
+                    new Response.Listener<String>() {
                         @Override
-                        public void onResponse(JSONObject jsonObject) {
-                            SetLogOnUIThread("Json response"+jsonObject.toString());
-                            rQueue.getCache().clear();
-                            Toast.makeText(getApplication(), "File Uploaded Successfully", Toast.LENGTH_LONG).show();
+                        public void onResponse(String response) {
+                            Toast.makeText(MainActivity.this, response, Toast.LENGTH_LONG).show();
+                            //parseData(response);
+
                         }
-                    }, new Response.ErrorListener() {
+                    },
+                    new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            Toast.makeText(MainActivity.this, error.toString(), Toast.LENGTH_LONG).show();
+                        }
+                    }) {
                 @Override
-                public void onErrorResponse(VolleyError volleyError) {
-                    SetLogOnUIThread("Volley error "+ volleyError.toString());
+                protected Map<String, String> getParams() {
+                    Map<String, String> params = new HashMap<String, String>();
+                    params.put("user_id", String.valueOf(id));
+                    params.put("biometric", encodedFile);
 
+                    return params;
                 }
-            });
-            rQueue.add(jsonObjectRequest);
 
+            };
+            rQueue = Volley.newRequestQueue(MainActivity.this);
+            rQueue.add(stringRequest);
+        }
         ////////////////------End---Block---/////////////////
 
         } catch (Exception e) {
-           SetLogOnUIThread("Error " + e);
+           SetLogOnUIThread("Error  " + e.toString());
            e.printStackTrace();
         }
 
