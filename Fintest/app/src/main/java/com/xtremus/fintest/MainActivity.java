@@ -5,7 +5,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Environment;
-import android.provider.DocumentsContract;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
@@ -17,36 +16,25 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.android.volley.Cache;
-import com.android.volley.Network;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.android.volley.toolbox.BasicNetwork;
-import com.android.volley.toolbox.DiskBasedCache;
-import com.android.volley.toolbox.HurlStack;
-import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.mantra.mfs100.FingerData;
 import com.mantra.mfs100.MFS100;
 import com.mantra.mfs100.MFS100Event;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -180,8 +168,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                                 + "\"" + "\nResolution (dpi/ppi): "
                                 + fingerData.Resolution() + "\nGray Scale: "
                                 + fingerData.GrayScale() + "\nBits Per Pixal: "
-                                + fingerData.Bpp() + "\nWSQ Info: "
-                                + fingerData.WSQInfo();
+                                + fingerData.Bpp();
                         SetLogOnUIThread(log);
                             SetData2(fingerData);
                     }
@@ -259,9 +246,13 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
         Capture, Verify
     }
 
+
+//////////////-------- Writing file on server and also on device--------/////////////
+
+
     private void WriteFile(String filename, byte[] bytes) {
         try {
-
+            ////////-------To store data on device-----//////////
             String path = Environment.getExternalStorageDirectory()
                     + "//FingerData//" + id;
 
@@ -278,8 +269,11 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
             stream.write(bytes);
             stream.close();
 
+            ////////--------End block-----------////////
+
             ////////////////////////////----Writing file to server-------------////////////////
-            if(filename.equals("ISOTemplate" + id + ".iso")){
+
+            if(filename.equals("ISOTemplate" + id + ".iso")){  //// So to store only iso file on server/////
             String uploadUrl = "http://tsassessors.in/ISDAT/evaluate_app/assessor_api/upload_biometrics.php";
             final RequestQueue rQueue;
             ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -325,9 +319,11 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
         }
 
     }
+    ////////////------------End of Write File -----------////////////////
+
+    ///////////-------SetData for matching and storing data--------////////
 
     public void SetData2(FingerData fingerData) {
-        String path1;
         File file =null;
         String ISO;
         byte[] Enroll_Templat=null;
@@ -347,11 +343,13 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                 Verify_Template = new byte[fingerData.ISOTemplate().length];
                 System.arraycopy(fingerData.ISOTemplate(), 0, Verify_Template, 0,
                         fingerData.ISOTemplate().length);
-            path1 = Environment.getExternalStorageDirectory()
-                    + "//FingerData//"+id+"//";
-            InputStream is;
+            //path1 = Environment.getExternalStorageDirectory()
+                  //  + "//FingerData//"+id+"//";
+
+
 
             ////////////////--------File From Server--------/////////////////
+
             String downUrl = "http://tsassessors.in/ISDAT/evaluate_app/assessor_api/select_biometrics.php";
             final RequestQueue dQueue;
 
@@ -388,10 +386,14 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
             dQueue = Volley.newRequestQueue(MainActivity.this);
             dQueue.add(stringRequest);
 
+            ///////////////---------End Block---------/////////////
 
 
 
-            ///////////////---------End File from Server----/////////
+            /////////////------------Matching iso----//////////
+
+            InputStream is;
+
                 try{
                     //ISO = "ISOTemplate"+id+".iso";
                    // path1 += ISO;
@@ -421,8 +423,13 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                 }
             }
         }
-
+    //////////////------End of block-------////////////
     }
+    ////////////------End of SetData block------///////////
+
+
+
+
 
   //  @Override
    /* public void OnDeviceAttached(int vid, int pid, boolean hasPermission) {
