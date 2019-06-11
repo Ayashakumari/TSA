@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.DocumentsContract;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
@@ -32,6 +33,7 @@ import com.mantra.mfs100.FingerData;
 import com.mantra.mfs100.MFS100;
 import com.mantra.mfs100.MFS100Event;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -63,6 +65,7 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
    private FingerData lastCapFingerData = null;
     private boolean isCaptureRunning = false;
     private int id = 1500;
+    String servPath;
 
 
     TextView lblMessage;
@@ -292,7 +295,6 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
                         @Override
                         public void onResponse(String response) {
                             Toast.makeText(MainActivity.this, response, Toast.LENGTH_LONG).show();
-                            //parseData(response);
 
                         }
                     },
@@ -348,10 +350,52 @@ public class MainActivity extends AppCompatActivity implements MFS100Event {
             path1 = Environment.getExternalStorageDirectory()
                     + "//FingerData//"+id+"//";
             InputStream is;
+
+            ////////////////--------File From Server--------/////////////////
+            String downUrl = "http://tsassessors.in/ISDAT/evaluate_app/assessor_api/select_biometrics.php";
+            final RequestQueue dQueue;
+
+            StringRequest stringRequest = new StringRequest(Request.Method.POST, downUrl,
+                    new Response.Listener<String>() {
+                        @Override
+                        public void onResponse(String response) {
+                            Toast.makeText(MainActivity.this, response, Toast.LENGTH_LONG).show();
+                            SetLogOnUIThread(response);
+                           try {
+                               JSONObject object = new JSONObject(response);
+                               servPath = object.getString("msg");
+                               SetLogOnUIThread("servPath= "+ servPath);
+
+                           }catch(JSONException e){
+                               SetLogOnUIThread("Error in array= "+e.toString());
+                           }
+                        }
+                    },
+                    new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            Toast.makeText(MainActivity.this, error.toString(), Toast.LENGTH_LONG).show();
+                        }
+                    }) {
+                @Override
+                protected Map<String, String> getParams() {
+                    Map<String, String> params = new HashMap<String, String>();
+                    params.put("user_id", String.valueOf(id));
+                    return params;
+                }
+
+            };
+            dQueue = Volley.newRequestQueue(MainActivity.this);
+            dQueue.add(stringRequest);
+
+
+
+
+            ///////////////---------End File from Server----/////////
                 try{
-                    ISO = "ISOTemplate"+id+".iso";
-                    path1 += ISO;
-                    file = new File(path1);
+                    //ISO = "ISOTemplate"+id+".iso";
+                   // path1 += ISO;
+                    file = new File(servPath);
                     is = new FileInputStream(file);
                     Enroll_Templat = new byte[(int)file.length()];
                     ByteArrayOutputStream buffer = new ByteArrayOutputStream();
